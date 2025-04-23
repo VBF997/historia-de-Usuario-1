@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mi Historial Médico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f6fc;
+      padding: 2rem;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #0066cc;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      width: 100%;
+      background: #0066cc;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #004a99;
+    }
+
+    .registro {
+      background: #eaf0fb;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .registro h3 {
+      margin: 0 0 0.5rem 0;
+      color: #003d66;
+    }
+
+    .error {
+      color: red;
+      margin-top: 1rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Consultar Historial Médico</h1>
+    <form id="formularioHistorial">
+      <label for="pacienteId">Ingrese su ID de Paciente</label>
+      <input type="text" id="pacienteId" placeholder="Ej: demo" required>
+      <button type="submit">Consultar</button>
+    </form>
+
+    <div id="resultadosHistorial"></div>
+  </div>
+
+  <script>
+    document.getElementById('formularioHistorial').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const pacienteId = document.getElementById('pacienteId').value.trim().toLowerCase();
+      const resultados = document.getElementById('resultadosHistorial');
+      resultados.innerHTML = '';
+
+      if (pacienteId === 'demo') {
+        const historialSimulado = [
+          {
+            fecha: "2024-11-15",
+            diagnostico: "Hipertensión arterial",
+            tratamiento: "Losartán 50mg una vez al día"
+          },
+          {
+            fecha: "2025-01-22",
+            diagnostico: "Diabetes tipo 2",
+            tratamiento: "Metformina 850mg cada 12 horas"
+          },
+          {
+            fecha: "2025-03-10",
+            diagnostico: "Infección urinaria",
+            tratamiento: "Nitrofurantoína 100mg cada 6 horas por 7 días"
+          }
+        ];
+
+        historialSimulado.forEach(entry => {
+          const div = document.createElement('div');
+          div.className = 'registro';
+          div.innerHTML = `
+            <h3>Consulta del ${entry.fecha}</h3>
+            <p><strong>Diagnóstico:</strong> ${entry.diagnostico}</p>
+            <p><strong>Tratamiento:</strong> ${entry.tratamiento}</p>
+          `;
+          resultados.appendChild(div);
+        });
+      } else {
+        resultados.innerHTML = `<p class="error">ID no encontrado. Por favor, use "demo" para probar.</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
