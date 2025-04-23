@@ -2,148 +2,125 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Informe de Visitas por Paciente</title>
+  <title>Informe de Visitas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #e6f5ec;
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      background-color: #2e7d32;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-    }
-
-    main {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f6fc;
       padding: 2rem;
-      max-width: 900px;
-      margin: auto;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #2e7d32; /* Verde bonito */
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
     }
 
     button {
-      background-color: #43a047;
-      border: none;
+      width: 100%;
+      background: #43a047; /* Verde más vivo */
       color: white;
-      padding: 0.8rem 1.5rem;
-      font-size: 1rem;
-      border-radius: 8px;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
       cursor: pointer;
-      margin-bottom: 1.5rem;
     }
 
     button:hover {
-      background-color: #388e3c;
+      background: #2e7d32;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: white;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    .registro {
+      background: #e8f5e9;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     }
 
-    th, td {
-      padding: 0.8rem;
-      text-align: left;
-      border-bottom: 1px solid #ccc;
-    }
-
-    th {
-      background-color: #a5d6a7;
-    }
-
-    h3 {
+    .registro h3 {
+      margin: 0 0 0.5rem 0;
       color: #1b5e20;
     }
 
-    @media (max-width: 600px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-
-      td {
-        position: relative;
-        padding-left: 50%;
-      }
-
-      td::before {
-        position: absolute;
-        top: 0;
-        left: 10px;
-        font-weight: bold;
-        white-space: nowrap;
-      }
+    .error {
+      color: red;
+      margin-top: 1rem;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Informe de Frecuencia de Visitas</h1>
-  </header>
+  <div class="container">
+    <h1>Generar Informe de Visitas</h1>
+    <form id="formularioVisitas">
+      <label for="pacienteId">Ingrese su ID de Paciente</label>
+      <input type="text" id="pacienteId" placeholder="Ej: 12345" required>
+      <button type="submit">Generar Informe</button>
+    </form>
 
-  <main>
-    <button id="generarInforme">Generar Informe</button>
-    <div id="informeVisitas"></div>
-  </main>
+    <div id="resultadosHistorial"></div>
+  </div>
 
   <script>
-    document.getElementById('generarInforme').addEventListener('click', function() {
-      fetch('http://localhost:8000/visitas') // ajusta el URL a tu backend real
+    document.getElementById('formularioVisitas').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const pacienteId = document.getElementById('pacienteId').value.trim();
+      const resultados = document.getElementById('resultadosHistorial');
+      resultados.innerHTML = '';
+
+      fetch('http://localhost:8000/visitas') // Cambia al URL correcto de tu backend
         .then(response => {
           if (!response.ok) throw new Error('Error al obtener visitas');
           return response.json();
         })
         .then(data => {
-          const resumen = generarFrecuenciaVisitas(data);
-          mostrarInforme(resumen);
+          const visitasPaciente = data.filter(v => v.pacienteId === pacienteId);
+
+          if (visitasPaciente.length === 0) {
+            resultados.innerHTML = `<p class="error">No se encontraron visitas para este paciente.</p>`;
+            return;
+          }
+
+          visitasPaciente.forEach(entry => {
+            const div = document.createElement('div');
+            div.className = 'registro';
+            div.innerHTML = `
+              <h3>Fecha de Visita: ${entry.fecha}</h3>
+            `;
+            resultados.appendChild(div);
+          });
         })
         .catch(error => {
           console.error('Error:', error);
-          alert('No se pudo generar el informe');
+          resultados.innerHTML = `<p class="error">No se pudo generar el informe.</p>`;
         });
-
-      function generarFrecuenciaVisitas(visitas) {
-        const frecuencia = {};
-        visitas.forEach(v => {
-          const paciente = v.pacienteId;
-          const mes = new Date(v.fecha).toLocaleString('default', { year: 'numeric', month: 'long' });
-          if (!frecuencia[paciente]) frecuencia[paciente] = {};
-          frecuencia[paciente][mes] = (frecuencia[paciente][mes] || 0) + 1;
-        });
-        return frecuencia;
-      }
-
-      function mostrarInforme(frecuencia) {
-        const div = document.getElementById('informeVisitas');
-        div.innerHTML = '';
-
-        for (const paciente in frecuencia) {
-          div.innerHTML += `<h3>Paciente ID: ${paciente}</h3>`;
-          const tabla = document.createElement('table');
-          tabla.innerHTML = `
-            <thead>
-              <tr>
-                <th>Mes</th>
-                <th>Número de visitas</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${Object.entries(frecuencia[paciente]).map(([mes, cantidad]) => `
-                <tr>
-                  <td>${mes}</td>
-                  <td>${cantidad}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          `;
-          div.appendChild(tabla);
-        }
-      }
     });
   </script>
 </body>
