@@ -1,63 +1,54 @@
-document.getElementById('buscarHistorial').addEventListener('click', function(event) {
+document.getElementById('generarInforme').addEventListener('click', function(event) {
   event.preventDefault();
 
-  const pacienteId = document.getElementById('pacienteId').value;
-
-  // Intentar hacer la solicitud al backend
-  fetch(`https://hl7-fhir-ehr-ver-nica.onrender.com/service-request/`, {
+  fetch('https://hl7-fhir-ehr-ver-nica.onrender.com/service-request', {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' }
   })
   .then(response => {
-    if (!response.ok) {
-      throw new Error('No se pudo obtener el historial médico desde el backend.');
-    }
+    if (!response.ok) throw new Error('No se pudieron obtener los datos de visitas.');
     return response.json();
   })
   .then(data => {
-    mostrarHistorial(data);
+    const informe = generarFrecuenciaVisitas(data);
+    mostrarInforme(informe);
   })
   .catch(error => {
     console.error('Error:', error);
-    alert('Hubo un error al intentar obtener el historial desde el servidor. Usando datos simulados.');
-    
-    // Usar datos simulados si hay un error con el fetch
-    const historialSimulado = [
-      {
-        fecha: "2024-11-15",
-        diagnostico: "Hipertensión arterial",
-        tratamiento: "Losartán 50mg una vez al día"
-      },
-      {
-        fecha: "2025-01-22",
-        diagnostico: "Diabetes tipo 2",
-        tratamiento: "Metformina 850mg cada 12 horas"
-      },
-      {
-        fecha: "2025-03-10",
-        diagnostico: "Infección urinaria",
-        tratamiento: "Nitrofurantoína 100mg cada 6 horas por 7 días"
-      }
-    ];
-    mostrarHistorial(historialSimulado);
+    alert('Error al generar el informe.');
   });
 
-  function mostrarHistorial(historial) {
-    const resultados = document.getElementById('resultadosHistorial');
-    resultados.innerHTML = '';
+  function generarFrecuenciaVisitas(visitas) {
+    const frecuencia = {};
 
-    if (historial.length === 0) {
-      resultados.innerHTML = '<p>No se encontraron registros médicos para este paciente.</p>';
-    } else {
-      historial.forEach(entry => {
-        resultados.innerHTML += `
-          <div class="registro">
-            <h3>Consulta del ${entry.fecha}</h3>
-            <p><strong>Diagnóstico:</strong> ${entry.diagnostico}</p>
-            <p><strong>Tratamiento:</strong> ${entry.tratamiento}</p>
-          </div>
-        `;
-      });
+    visitas.forEach(v => {
+      const paciente = v.pacienteId;
+      const mes = new Date(v.fecha).toLocaleString('default', { year: 'numeric', month: 'long' });
+
+      if (!frecuencia[paciente]) {
+        frecuencia[paciente] = {};
+      }
+
+      if (!frecuencia[paciente][mes]) {
+        frecuencia[paciente][mes] = 0;
+      }
+
+      frecuencia[paciente][mes]++;
+    });
+
+    return frecuencia;
+  }
+
+  function mostrarInforme(frecuencia) {
+    const informeDiv = document.getElementById('informeVisitas');
+    informeDiv.innerHTML = '<h3>Informe de Frecuencia de Visitas</h3>';
+
+    for (const paciente in frecuencia) {
+      informeDiv.innerHTML += `<h4>Paciente ID: ${paciente}</h4>`;
+      const meses = frecuencia[paciente];
+      for (const mes in meses) {
+        informeDiv.innerHTML += `<p>${mes}: ${meses[mes]} visitas</p>`;
+      }
     }
   }
 });

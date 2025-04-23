@@ -2,130 +2,147 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Mi Historial Médico</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Informe de Visitas por Paciente</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f2f6fc;
-      padding: 2rem;
-      color: #333;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #e6f5ec;
+      margin: 0;
+      padding: 0;
     }
 
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 12px;
-      padding: 2rem;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    h1 {
+    header {
+      background-color: #2e7d32;
+      color: white;
+      padding: 1rem;
       text-align: center;
-      color: #0066cc;
     }
 
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+    main {
+      padding: 2rem;
+      max-width: 900px;
+      margin: auto;
     }
 
     button {
-      width: 100%;
-      background: #0066cc;
-      color: white;
-      padding: 12px;
+      background-color: #43a047;
       border: none;
-      border-radius: 6px;
-      font-size: 16px;
+      color: white;
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
       cursor: pointer;
+      margin-bottom: 1.5rem;
     }
 
     button:hover {
-      background: #004a99;
+      background-color: #388e3c;
     }
 
-    .registro {
-      background: #eaf0fb;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-top: 1rem;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .registro h3 {
-      margin: 0 0 0.5rem 0;
-      color: #003d66;
+    th, td {
+      padding: 0.8rem;
+      text-align: left;
+      border-bottom: 1px solid #ccc;
     }
 
-    .error {
-      color: red;
-      margin-top: 1rem;
-      text-align: center;
+    th {
+      background-color: #a5d6a7;
+    }
+
+    h3 {
+      color: #1b5e20;
+    }
+
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      td {
+        position: relative;
+        padding-left: 50%;
+      }
+
+      td::before {
+        position: absolute;
+        top: 0;
+        left: 10px;
+        font-weight: bold;
+        white-space: nowrap;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Consultar Historial Médico</h1>
-    <form id="formularioHistorial">
-      <label for="pacienteId">Ingrese su ID de Paciente</label>
-      <input type="text" id="pacienteId" placeholder="Ej: demo" required>
-      <button type="submit">Consultar</button>
-    </form>
+  <header>
+    <h1>Informe de Frecuencia de Visitas</h1>
+  </header>
 
-    <div id="resultadosHistorial"></div>
-  </div>
+  <main>
+    <button id="generarInforme">Generar Informe</button>
+    <div id="informeVisitas"></div>
+  </main>
 
   <script>
-    document.getElementById('formularioHistorial').addEventListener('submit', function(event) {
-      event.preventDefault();
-
-      const pacienteId = document.getElementById('pacienteId').value.trim().toLowerCase();
-      const resultados = document.getElementById('resultadosHistorial');
-      resultados.innerHTML = '';
-
-      if (pacienteId === 'demo') {
-        const historialSimulado = [
-          {
-            fecha: "2024-11-15",
-            diagnostico: "Hipertensión arterial",
-            tratamiento: "Losartán 50mg una vez al día"
-          },
-          {
-            fecha: "2025-01-22",
-            diagnostico: "Diabetes tipo 2",
-            tratamiento: "Metformina 850mg cada 12 horas"
-          },
-          {
-            fecha: "2025-03-10",
-            diagnostico: "Infección urinaria",
-            tratamiento: "Nitrofurantoína 100mg cada 6 horas por 7 días"
-          }
-        ];
-
-        historialSimulado.forEach(entry => {
-          const div = document.createElement('div');
-          div.className = 'registro';
-          div.innerHTML = `
-            <h3>Consulta del ${entry.fecha}</h3>
-            <p><strong>Diagnóstico:</strong> ${entry.diagnostico}</p>
-            <p><strong>Tratamiento:</strong> ${entry.tratamiento}</p>
-          `;
-          resultados.appendChild(div);
+    document.getElementById('generarInforme').addEventListener('click', function() {
+      fetch('http://localhost:8000/visitas') // ajusta el URL a tu backend real
+        .then(response => {
+          if (!response.ok) throw new Error('Error al obtener visitas');
+          return response.json();
+        })
+        .then(data => {
+          const resumen = generarFrecuenciaVisitas(data);
+          mostrarInforme(resumen);
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('No se pudo generar el informe');
         });
-      } else {
-        resultados.innerHTML = `<p class="error">ID no encontrado. Por favor, use "demo" para probar.</p>`;
+
+      function generarFrecuenciaVisitas(visitas) {
+        const frecuencia = {};
+        visitas.forEach(v => {
+          const paciente = v.pacienteId;
+          const mes = new Date(v.fecha).toLocaleString('default', { year: 'numeric', month: 'long' });
+          if (!frecuencia[paciente]) frecuencia[paciente] = {};
+          frecuencia[paciente][mes] = (frecuencia[paciente][mes] || 0) + 1;
+        });
+        return frecuencia;
+      }
+
+      function mostrarInforme(frecuencia) {
+        const div = document.getElementById('informeVisitas');
+        div.innerHTML = '';
+
+        for (const paciente in frecuencia) {
+          div.innerHTML += `<h3>Paciente ID: ${paciente}</h3>`;
+          const tabla = document.createElement('table');
+          tabla.innerHTML = `
+            <thead>
+              <tr>
+                <th>Mes</th>
+                <th>Número de visitas</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.entries(frecuencia[paciente]).map(([mes, cantidad]) => `
+                <tr>
+                  <td>${mes}</td>
+                  <td>${cantidad}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          `;
+          div.appendChild(tabla);
+        }
       }
     });
   </script>
